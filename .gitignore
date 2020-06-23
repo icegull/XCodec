@@ -2,4 +2,6 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/.vs/XCodec/v16
+/.vs
+/x64
+/XCodec/x64
