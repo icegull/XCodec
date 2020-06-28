@@ -150,6 +150,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ClockTimer.h" />
+    <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="FpsHelper.h" />
     <ClInclude Include="GlobalDefine.h" />
   </ItemGroup>
