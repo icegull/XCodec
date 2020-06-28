@@ -2,6 +2,11 @@
 #include <cstdint>
 #include <functional>
 
+extern "C"
+{
+#include <libavutil/error.h>
+}
+
 enum class PFrameInterval
 {
 	I = 0,
@@ -38,3 +43,10 @@ enum class FrameType
 };
 
 using Encoder_CB = std::function<void(void* bitstreamBufferPtr, int32_t bitstreamSizeInBytes, int32_t frameIdx, uint64_t outputTimeStamp, int32_t nType)>;
+
+inline char* av_err_to_str(int errnum)
+{
+	static char str[AV_ERROR_MAX_STRING_SIZE];
+	memset(str, 0, sizeof(str));
+	return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
+}
