@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <array>
+#include <ppl.h>
 #include "ClockTimer.h"
 #include "FpsHelper.h"
 #include "GlobalDefine.h"
@@ -17,11 +18,11 @@ extern "C"
 #pragma comment(lib,"avcodec.lib")
 #pragma comment(lib,"avutil.lib")
 
-static void encode(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt, FILE *outfile)
+static void encode_frame_internal(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt, FILE *outfile, int32_t idx)
 {
 	/* send the frame to the encoder */
 	if (frame)
-		printf("Send frame %3I64d\n", frame->pts);
+		printf("[%d]Send frame %3I64d\n", idx, frame->pts);
 
 	int ret = avcodec_send_frame(enc_ctx, frame);
 	if (ret < 0) {
@@ -29,7 +30,8 @@ static void encode(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt, FILE 
 		exit(1);
 	}
 
-	while (ret >= 0) {
+	while (ret >= 0)
+	{
 		ret = avcodec_receive_packet(enc_ctx, pkt);
 		if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
 			return;
@@ -38,28 +40,20 @@ static void encode(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt, FILE 
 			exit(1);
 		}
 
-		printf("Write packet %3I64d (size=%5d)\n", pkt->pts, pkt->size);
+		printf("[%d]Write packet %3I64d (size=%5d)\n", idx, pkt->pts, pkt->size);
 		if (outfile != nullptr)
 			fwrite(pkt->data, 1, pkt->size, outfile);
 		av_packet_unref(pkt);
 	}
 }
 
-int main(int argc, char **argv)
+void encode_frame(int32_t idx, const char* filename, const char* codec_name, int32_t width, int32_t height, int64_t bit_rate)
 {
-	const char *filename, *codec_name;
 	const AVCodec *codec;
 	AVCodecContext *c = nullptr;
 	int i, ret, x, y;
 	AVPacket *pkt;
 	uint8_t endcode[] = { 0, 0, 1, 0xb7 };
-
-	if (argc <= 2) {
-		fprintf(stderr, "Usage: %s <codec name> <output file>\n", argv[0]);
-		exit(0);
-	}
-	codec_name = argv[1];
-	filename = argv[2];
 
 	codec = avcodec_find_encoder_by_name(codec_name);
 	if (!codec) {
@@ -78,10 +72,10 @@ int main(int argc, char **argv)
 		exit(1);
 
 	/* put sample parameters */
-	c->bit_rate = 100 * 1024 * 1024;
+	c->bit_rate = bit_rate;
 	/* resolution must be a multiple of two */
-	c->width = 7680;
-	c->height = 4320;
+	c->width = width;
+	c->height = height;
 	/* frames per second */
 	c->time_base = { 1, 50 };
 	c->framerate = { 50, 1 };
@@ -157,7 +151,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		fprintf(stderr, "prepare %d dummy image\n", i);
+		fprintf(stderr, "[%d]prepare %d dummy image\n", idx, i);
 	}
 
 	const ClockTimer timer;
@@ -167,17 +161,16 @@ int main(int argc, char **argv)
 	const uint64_t nb_encode = 100;
 	for (i = 0; i < nb_encode; i++)
 	{
-		fflush(stdout);
 		AVFrame* frame = input_image.at(i % input_image.size());
 		frame->pts = i;
 		/* encode the image */
-		encode(c, frame, pkt, f);
+		encode_frame_internal(c, frame, pkt, f, idx);
 		fps = fps_helper.update_fps();
 	}
 
 	/* flush the encoder */
-	encode(c, nullptr, pkt, f);
-	fprintf(stderr, "encode stop, cost %.2f ms, fps %d\n", timer.elapse_ms(), fps);
+	encode_frame_internal(c, nullptr, pkt, f, idx);
+	fprintf(stderr, "[%d]encode stop, cost %.2f ms, fps %d\n", idx, timer.elapse_ms(), fps);
 
 	/* add sequence end code to have a real MPEG file */
 	if ((codec->id == AV_CODEC_ID_MPEG1VIDEO || codec->id == AV_CODEC_ID_MPEG2VIDEO) && f != nullptr)
@@ -189,6 +182,22 @@ int main(int argc, char **argv)
 	for (auto& frame : input_image)
 		av_frame_free(&frame);
 	av_packet_free(&pkt);
+}
+
+int main(int argc, char **argv)
+{
+	if (argc <= 2)
+	{
+		fprintf(stderr, "Usage: %s <codec name> <output file>\n", argv[0]);
+		exit(0);
+	}
+	const char* codec_name = argv[1];
+	const char* filename = argv[2];
+	//encode_frame(0, filename, codec_name, 7680, 4320, 100 * 1024 * 1024);
+	concurrency::parallel_for(0, 4, [&](int idx)
+		{
+			encode_frame(idx, filename, codec_name, 3840, 2160, 50 * 1024 * 1024);
+		});
 
 	getchar();
 	return 0;
