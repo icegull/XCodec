@@ -21,8 +21,8 @@ extern "C"
 static void encode_frame_internal(AVCodecContext *enc_ctx, AVFrame *frame, AVPacket *pkt, FILE *outfile, int32_t idx)
 {
 	/* send the frame to the encoder */
-	if (frame)
-		printf("[%d]Send frame %3I64d\n", idx, frame->pts);
+	/*if (frame)
+		printf("[%d]Send frame %3I64d\n", idx, frame->pts);*/
 
 	int ret = avcodec_send_frame(enc_ctx, frame);
 	if (ret < 0) {
@@ -40,7 +40,7 @@ static void encode_frame_internal(AVCodecContext *enc_ctx, AVFrame *frame, AVPac
 			exit(1);
 		}
 
-		printf("[%d]Write packet %3I64d (size=%5d)\n", idx, pkt->pts, pkt->size);
+		//printf("[%d]Write packet %3I64d (size=%5d)\n", idx, pkt->pts, pkt->size);
 		if (outfile != nullptr)
 			fwrite(pkt->data, 1, pkt->size, outfile);
 		av_packet_unref(pkt);
@@ -155,22 +155,25 @@ void encode_frame(int32_t idx, const char* filename, const char* codec_name, int
 	}
 
 	const ClockTimer timer;
+	ClockTimer frame_timer;
 	FpsHelper fps_helper;
 	int32_t fps = 0;
 	fprintf(stderr, "encode start\n");
 	const uint64_t nb_encode = 100;
 	for (i = 0; i < nb_encode; i++)
 	{
+		frame_timer.reset();
 		AVFrame* frame = input_image.at(i % input_image.size());
 		frame->pts = i;
 		/* encode the image */
 		encode_frame_internal(c, frame, pkt, f, idx);
 		fps = fps_helper.update_fps();
+		fprintf(stderr, "[%d]encode one frame, cost %.2f ms, fps %d\n", idx, frame_timer.elapse_ms(), fps);
 	}
 
 	/* flush the encoder */
 	encode_frame_internal(c, nullptr, pkt, f, idx);
-	fprintf(stderr, "[%d]encode stop, cost %.2f ms, fps %d\n", idx, timer.elapse_ms(), fps);
+	fprintf(stderr, "=====[%d]encode stop, cost %.2f ms\n", idx, timer.elapse_ms());
 
 	/* add sequence end code to have a real MPEG file */
 	if ((codec->id == AV_CODEC_ID_MPEG1VIDEO || codec->id == AV_CODEC_ID_MPEG2VIDEO) && f != nullptr)
