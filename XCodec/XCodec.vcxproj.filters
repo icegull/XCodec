@@ -18,15 +18,18 @@
     <ClCompile Include="XCodec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="libx265.cpp">
+    <ClCompile Include="FpsHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="libx265.h">
+    <ClInclude Include="GlobalDefine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GlobalDefine.h">
+    <ClInclude Include="ClockTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FpsHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

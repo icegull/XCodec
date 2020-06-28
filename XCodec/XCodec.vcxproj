@@ -145,12 +145,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="libx265.cpp" />
+    <ClCompile Include="FpsHelper.cpp" />
     <ClCompile Include="XCodec.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ClockTimer.h" />
+    <ClInclude Include="FpsHelper.h" />
     <ClInclude Include="GlobalDefine.h" />
-    <ClInclude Include="libx265.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
