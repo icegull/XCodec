@@ -5,6 +5,8 @@
 
 int main(int argc, char **argv)
 {
+	/*generate_test_pattern(7680, 4320, 1, R"(D:\Software\7680_4320.yuv420)");
+	return 0;*/
 	if (argc <= 2)
 	{
 		fprintf(stderr, "Usage: %s <codec name> <output file>\n", argv[0]);
