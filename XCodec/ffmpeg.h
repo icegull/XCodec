@@ -111,11 +111,14 @@ inline void ffmpeg_encode_frame(int32_t idx, const char* filename, const char* c
 	}
 
 	FILE* f = nullptr;
-	/*fopen_s(&f, filename, "wb");
-	if (!f) {
-		fprintf(stderr, "Could not open %s\n", filename);
-		exit(1);
-	}*/
+	if (filename != nullptr)
+	{
+		fopen_s(&f, filename, "wb");
+		if (!f) {
+			fprintf(stderr, "Could not open %s\n", filename);
+			exit(1);
+		}
+	}
 
 	/* prepare a dummy image */
 	std::array<AVFrame*, 10> input_image{};
